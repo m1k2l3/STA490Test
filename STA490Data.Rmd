@@ -1,0 +1,447 @@
+---
+title: "STA490 Test"
+author: "Max Chen"
+date: "2025-02-15"
+output: html_document
+---
+
+```{r, echo=FALSE, warning=FALSE}
+library("dplyr")
+library("tidyverse")
+
+if (!require("magrittr")) install.packages("magrittr")
+library("magrittr")
+
+if (!require("naniar")) install.packages("naniar")
+library("naniar")
+
+if (!require("finalfit")) install.packages("finalfit")
+library("finalfit")
+
+if (!require('GGally')) install.packages('GGally')
+library('GGally')
+
+if (!require("rms")) install.packages("rms")
+library("rms")
+
+if (!require("kableExtra")) install.packages("kableExtra")
+library("kableExtra")
+
+if (!require("mice")) install.packages("mice")
+library("mice")
+
+
+```
+
+```{r}
+data = readRDS("C:/Users/maxlo/Downloads/Wellspring_Cleaned.Rdata")
+
+```
+
+
+```{r}
+# Total number of rows
+total_rows <- nrow(data)
+
+# Count missing values as percentage of total rows and sort
+missing_percentages <- data %>%
+  summarise(across(everything(), ~ mean(. == "No response/Other") * 100)) %>%
+  pivot_longer(cols = everything(), names_to = "Variable", values_to = "Missing_Percentage") %>%
+  arrange(desc(Missing_Percentage))
+
+# Print result
+print(missing_percentages)
+
+```
+
+```{r}
+# We want to look into the following missing questions: q79 - Employment Stasis, q76 - Level of Education, q80 - Income Level, q78 - Home Location, q73 - Born in Canada
+
+transform_no_response <- function(df, vars, replacement = NA) {
+  # Ensure the specified columns exist in the dataframe
+  vars <- intersect(vars, colnames(df))
+  
+  # Apply transformation
+  df[vars] <- lapply(df[vars], function(x) {
+    ifelse(x == "No response/Other", replacement, x)
+  })
+  
+  return(df)
+}
+
+data <- transform_no_response(data, vars = c("q76", "q79", "q80", "q78", "q73"), replacement = NA)
+
+```
+
+```{r}
+# Identify the missing pattern for the eight demographic variables
+
+#Unused sample codes 
+
+demographic_data = data %>% 
+  select(q2, q3, q76, q79, q80, q78, q73)
+
+#demographic_data %>% 
+#  missing_pattern()
+
+#vis_miss(demographic_data) + 
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12))
+
+gg_miss_upset(demographic_data)
+```
+This is an UpSet plot visualizing the missingness pattern in the dataset for variables q73, q78, q80, q76, and q79.
+
+The bottom left horizontal bars represent the total number of missing values for each variable. q76 and q79 have the highest missing values, while q73 has relatively fewer missing cases.
+
+The vertical bars at the top represent different missingness patterns. The tallest bars indicate the most common combinations of missing data across variables. The largest missingness group (5432 cases) consists of records where only q76 is missing. The second largest group (3612 cases) consists of observations where only q79 is missing. The third most common pattern (1200 cases) indicates both q76 and q79 are missing together, which is expected given their relationship observed in prior analyses.
+
+The bottom matrix with dots and lines shows which variables are missing together. A connected black dot means that those variables are missing in the same observations. The scattered smaller bars suggest that some cases have multiple missing values across different variables, but these cases are relatively rare.
+
+In summary, q76 and q79 are the most frequently missing variables, often separately but also together in a substantial number of cases. Other variables like q73, q78, and q80 have much fewer missing values and rarely co-occur in missingness patterns. This visualization confirms the need for careful imputation, especially for q76 and q79.
+
+After explore the patterns in the missing data, we can see that q76 and q79 are often missing together. We want to explore further on these two demographic variables. First, let's check whether they are missing at random (MAR) or missing not at random (MNAR). 
+```{r}
+check_missing_mar_mnar <- function(df, target_vars = c("q76", "q79"), explanatory_vars = NULL) {
+  
+  # Ensure target variables exist in the dataset
+  target_vars <- target_vars[target_vars %in% colnames(df)]
+  
+  if (length(target_vars) == 0) {
+    stop("None of the target variables are found in the dataset.")
+  }
+  
+  # If explanatory variables are not provided, use all other variables in the dataset
+  if (is.null(explanatory_vars)) {
+    explanatory_vars <- setdiff(names(df), target_vars)
+  }
+  
+  # Ensure explanatory variables exist
+  explanatory_vars <- explanatory_vars[explanatory_vars %in% colnames(df)]
+  
+  # STEP 1: Visual Exploration with missing_pairs()
+  message("Generating missing data visualization...")
+  df %>% missing_pairs(target_vars, explanatory_vars)
+  
+  # STEP 2: Compare Missingness with missing_compare()
+  for (var in target_vars) {
+    message(paste("\nChecking MAR for:", var))
+    df %>%
+      missing_compare(var, explanatory_vars) %>%
+      print()
+  }
+  
+}
+
+target_vars = c("q76", "q79")
+explanatory_vars = c("q2", "q3" ,"q80", "q78", "q73")
+
+# Example usage:
+check_missing_mar_mnar(demographic_data, target_vars = target_vars, explanatory_vars = explanatory_vars)
+
+
+```
+
+```{r}
+data_imputed_for_regression <- data
+
+# Use mode to impute the missing data in the variables that has a small percentage of missing values (<5%)
+impute_mode <- function(x) {
+  mode_value <- names(sort(table(x), decreasing = TRUE))[1] # Get the most frequent category
+  x[is.na(x)] <- mode_value
+  return(as.factor(x)) # Ensure it's still a factor
+}
+
+# Apply mode imputation to all categorical variables
+data_imputed_for_regression[explanatory_vars] <- data_imputed_for_regression[explanatory_vars] %>%
+  lapply(impute_mode)
+
+
+```
+
+```{r}
+# Q76
+
+# Disable scientific notation
+options(scipen=999)
+
+data_imputed_for_regression <- data_imputed_for_regression %>%
+  mutate(q76_missing = as.factor(ifelse(is.na(q76), 1, 0)),  
+         q79_missing = as.factor(ifelse(is.na(q79), 1, 0)))
+
+dd <- datadist(data_imputed_for_regression)  # Needed for rms models
+options(datadist = "dd")  
+
+full_model_q76 <- lrm(q76_missing ~ q2 + q3 + q80 + q78 + q73, 
+                      data = data_imputed_for_regression, x = TRUE, y = TRUE)
+
+stepwise_q76 <- fastbw(full_model_q76, rule = "aic")  # Stepwise selection for q76
+
+# print(stepwise_q76, digits = 2)  # Selected predictors for q76 missingness
+
+# Create a dataframe manually from the model output
+model_results_q76 <- data.frame(
+  Variable = c("Intercept", "q3=25-29", "q3=30-34", "q3=35-44", "q3=45-54",
+               "q3=55-64", "q3=65-74", "q3=75-84", "q3=85 or over", "q3=No response/Other",
+               "q80=25,000 to less than 50,000", "q80=50,000 to less than 75,000",
+               "q80=75,000 to less than 125,000", "q80=Less than 25,000",
+               "q80=No response/Other", "q73=Yes"),
+  Coefficient = c(-1.497, -0.631, -0.404, -0.231, -0.077, 
+                  0.080, -0.052, 0.056, 0.215, 0.707, 
+                  1.113, 0.609, 0.359, 1.127, 1.043, 0.320),
+  SE = c(0.211, 0.252, 0.244, 0.230, 0.206, 
+         0.199, 0.199, 0.200, 0.214, 0.331, 
+         0.077, 0.082, 0.084, 0.084, 0.079, 0.052),
+  `Wald Z` = c(-7.11, -2.50, -1.66, -1.01, -0.37, 
+               0.40, -0.26, 0.28, 1.00, 2.14, 
+               14.49, 7.47, 4.30, 13.36, 13.26, 6.19),
+  `P-value` = c(0, 0.01, 0.1, 0.31, 0.71, 
+                0.69, 0.79, 0.78, 0.32, 0.03, 
+                0, 0, 0, 0, 0, 0)
+)
+
+final_model_q76 <- lrm(q76_missing ~ q3 + q80 + q73, 
+                      data = data_imputed_for_regression, x = TRUE, y = TRUE)
+
+# Format table using knitr::kable()
+kable(model_results_q76, digits = 3, caption = "Final Logistic Regression Model q76 - Stepwise Selection")
+
+# Model Diagnostic using LRT
+af76 <- anova(final_model_q76, test='LR')
+print(af76, which='subscripts')
+
+```
+The missingness of q76 (education level) is missing at random (MAR) and is strongly influenced by income, age, and survey response behavior. Income level (q80) is the most significant predictor, with lower-income individuals being much more likely to have missing education data. Those earning less than \$25,000 (p < 0.001, coef = 1.127) and \$25,000–$50,000 (p < 0.001, coef = 1.113) show the highest missingness, indicating that economic insecurity or unwillingness to disclose income correlates with missing education information. Similarly, respondents who did not report income (No response/Other, p < 0.001, coef = 1.043) are also more likely to have missing education data.
+
+Age group (q3) has a weaker but noticeable effect. Individuals aged 25–29 are significantly less likely to have missing education data (p = 0.012, coef = -0.631), while other age groups do not show strong statistical significance, meaning age alone is not a major determinant of missingness.
+
+Survey response behavior also plays a role. Those who answered "Yes" to q73 (p < 0.001, coef = 0.320) are significantly more likely to have missing education data, suggesting a tendency for non-response across multiple questions. This implies that missingness in q76 is partly driven by systematic non-response behavior rather than being purely random.
+
+In summary, education data is missing more frequently among lower-income individuals and those who did not disclose income, with a smaller effect of age and response patterns. The low p-values (p < 0.001 for most income levels and q73) indicate that these relationships are highly statistically significant, meaning they are unlikely to occur by chance.
+
+```{r}
+#q79
+full_model_q79 <- lrm(q79_missing ~ q2 + q3 + q80 + q78 + q73, 
+                      data = data_imputed_for_regression, x = TRUE, y = TRUE)
+
+stepwise_q79 <- fastbw(full_model_q79, rule = "aic")  # Stepwise selection for q79
+
+# print(stepwise_q79, digits = 2)  # Selected predictors for q76 missingness
+
+# Create a data frame with the logistic regression results
+model_results_q79 <- data.frame(
+  Variable = c("Intercept", "q2=Male", "q2=No response/Other", "q3=25-29", "q3=30-34", 
+               "q3=35-44", "q3=45-54", "q3=55-64", "q3=65-74", "q3=75-84", "q3=85 or over", 
+               "q3=No response/Other", "q80=25,000 to less than 50,000", "q80=50,000 to less than 75,000", 
+               "q80=75,000 to less than 125,000", "q80=Less than 25,000", "q80=No response/Otherr", "q73=Yes"),
+  Coefficient = c(-3.11, -0.42, 0.37, 0.87, 0.90, 1.04, 1.18, 2.43, 4.48, 5.67, 6.03, 4.08, 1.18, 0.95, 0.52, 1.28, 1.12, 0.25),
+  S.E. = c(0.324, 0.054, 0.446, 0.350, 0.347, 0.336, 0.316, 0.311, 0.313, 0.329, 0.434, 0.620, 0.089, 0.092, 0.091, 0.107, 0.092, 0.071),
+  Wald_Z = c(-9.60, -7.84, 0.84, 2.47, 2.59, 3.10, 3.72, 7.82, 14.33, 17.20, 13.89, 6.58, 13.22, 10.36, 5.74, 12.02, 12.23, 3.50),
+  P_Value = c(0.0000000000000000, 0.0000000000000047, 0.4031121804282735, 0.0135541197184263, 0.0096005275326181,
+              0.0019638305433251, 0.0001984113492380, 0.0000000000000053, 0.0000000000000000, 0.0000000000000000,
+              0.0000000000000000, 0.0000000000464350, 0.0000000000000000, 0.0000000000000000, 0.0000000092670832,
+              0.0000000000000000, 0.0000000000000000, 0.0004616570599889)
+)
+
+final_model_q79 <- lrm(q79_missing ~ q2 + q3 + q80 + q73, 
+                      data = data_imputed_for_regression, x = TRUE, y = TRUE)
+
+# Print the table using knitr::kable
+kable(model_results_q79, digits = 2, caption = "Logistic Regression Results")
+
+# Model Diagnostic using LRT
+af79 <- anova(final_model_q79, test='LR')
+print(af79, which='subscripts')
+```
+The missingness of q79 (employment status) is missing at random (MAR) and is strongly influenced by gender, age, income, and survey response behavior. The intercept (-3.11, p < 0.001) suggests a low baseline probability of missing employment data, but specific demographic factors significantly increase missingness.
+
+Gender (q2) plays a role, with males being less likely to have missing employment data (coef = -0.42, p < 0.001). However, individuals who did not disclose their gender do not show a statistically significant difference (p = 0.403), indicating that gender non-disclosure does not strongly predict missing employment status.
+
+Age (q3) is a major factor, with missingness increasing significantly with age. Individuals aged 25–29 (coef = 0.87, p = 0.014) are already more likely to have missing employment data, and this effect strengthens in older groups, reaching coef = 6.03 (p < 0.001) for those 85 and older. This suggests that retirees or older individuals may be more hesitant to report employment status.
+
+Income (q80) is highly correlated with missingness, as individuals earning less than \$25,000 (coef = 1.28, p < 0.001) and \$25,000–$50,000 (coef = 1.18, p < 0.001) are far more likely to have missing employment data. Those who did not report income (No response/Other, coef = 1.12, p < 0.001) also have a high probability of missingness, indicating that financial uncertainty or reluctance to disclose financial information contributes to employment status non-response.
+
+Survey response behavior (q73) also influences missingness, as respondents who answered "Yes" to q73 (coef = 0.25, p < 0.001) are more likely to leave employment status unanswered. This suggests that systematic non-response behavior extends across multiple questions, reinforcing that missingness is not random but rather associated with respondent tendencies.
+
+Overall, missing employment data in q79 is most common among older individuals, those with lower incomes, and respondents who show general patterns of non-response. The very low p-values (p < 0.001 for most predictors) confirm that these effects are highly statistically significant, meaning they are unlikely to occur by chance.
+
+
+```{r}
+# Use Multiple Imputation by Chained Equations (MICE) for q76
+impute_vars <- data %>%
+  rename(Education = q76, Employment = q79)
+
+categorical_vars <- c("Education", "Employment", "q2", "q3", "q80", "q78", "q73")
+
+impute_vars[categorical_vars] <- lapply(impute_vars[categorical_vars], as.factor)
+
+# Set seed for reproducibility
+seed = 123
+set.seed(seed)
+
+# Perform multiple imputation
+mice_imputed <- mice(impute_vars, method = "polyreg", m = 100, maxit = 10, seed = seed)
+
+```
+
+```{r}
+# Check imputation summary
+summary(mice_imputed)
+
+```
+
+```{r}
+# Get the complete dataset with imputed values
+imputed_data <- complete(mice_imputed)
+
+
+
+```
+
+```{r}
+saveRDS(mice_imputed, file = "Wellspring_mice_imputed.Rdata")
+saveRDS(imputed_data, file = "Wellspring_imputed_data.Rdata")
+```
+
+```{r}
+# Compare distributions of original vs. imputed data
+
+# Convert q76 to dataframe
+q76_df <- as.data.frame(table(data_imputed$q76))
+
+# Convert q79 to dataframe
+q79_df <- as.data.frame(table(data_imputed$q79))
+
+
+# Define the correct order for education levels
+education_levels <- c("Under High school", "High school diploma", 
+                      "College or technical school", 
+                      "University undergraduate", "Above university undergraduate")
+
+# Convert 'Var1' into an ordered factor
+q76_df$Var1 <- factor(q76_df$Var1, levels = education_levels, ordered = TRUE)
+
+
+
+
+```
+The trace plot shows the stability of the imputation process for q76 and q79 across iterations. The means and standard deviations fluctuate but remain within a stable range, indicating convergence. If the lines do not exhibit systematic upward or downward trends, the imputations are consistent and reliable. However, if significant trends were present, additional iterations might be required. Overall, the plot suggests that the imputations have stabilized, meaning the missing data are being handled appropriately.
+```{r}
+# ggplot for q76
+ggplot(q76_df, aes(x = Var1, y = Freq)) + 
+  geom_bar(stat = "identity", fill = "gray") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Imputed q76 Distribution") +
+  xlab("Education Level") + 
+  ylab("Count")
+
+# ggplot for q79
+ggplot(q79_df, aes(x = Var1, y = Freq)) + 
+  geom_bar(stat = "identity", fill = "gray") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Imputed q79 Distribution") +
+  xlab("Employment Status") + 
+  ylab("Count")
+
+# Check Convergence of MICE Algorithm
+plot(mice_imputed)
+```
+
+
+```{r}
+# https://nerler.github.io/EP16_Multiple_Imputation/slide/07_convergence_and_diagnostics.pdf
+propplot <- function(x, formula, facet = "wrap", ...) {
+  library(ggplot2)
+
+  cd <- data.frame(mice::complete(x, "long", include = TRUE))
+  cd$.imp <- factor(cd$.imp)
+  
+  r <- as.data.frame(is.na(x$data))
+  
+  impcat <- x$meth != "" & sapply(x$data, is.factor)
+  vnames <- names(impcat)[impcat]
+  
+  if (missing(formula)) {
+    formula <- as.formula(paste(paste(vnames, collapse = "+",
+                                      sep = ""), "~1", sep = ""))
+  }
+  
+  tmsx <- terms(formula[-3], data = x$data)
+  xnames <- attr(tmsx, "term.labels")
+  xnames <- xnames[xnames %in% vnames]
+  
+  if (paste(formula[3]) != "1") {
+    wvars <- gsub("[[:space:]]*\\|[[:print:]]*", "", paste(formula)[3])
+    wvars <- attr(terms(as.formula(paste("~", wvars))), "term.labels")
+    if (grepl("\\|", formula[3])) {
+      svars <- gsub("[[:print:]]*\\|[[:space:]]*", "", paste(formula)[3])
+      svars <- all.vars(as.formula(paste("~", svars)))
+    } else {
+      svars <- ".imp"
+    }
+  } else {
+    wvars <- NULL
+    svars <- ".imp"
+  }
+  
+  for (i in seq_along(xnames)) {
+    xvar <- xnames[i]
+    select <- cd$.imp != 0 & !r[, xvar]
+    cd[select, xvar] <- NA
+  }
+  
+  for (i in which(!wvars %in% names(cd))) {
+    cd[, wvars[i]] <- with(cd, eval(parse(text = wvars[i])))
+  }
+  
+  meltDF <- reshape2::melt(cd[, c(wvars, svars, xnames)], id.vars = c(wvars, svars))
+  meltDF <- meltDF[!is.na(meltDF$value), ]
+  
+  wvars <- if (!is.null(wvars)) paste0("`", wvars, "`")
+  
+  a <- plyr::ddply(meltDF, c(wvars, svars, "variable", "value"), plyr::summarize,
+                    count = length(value))
+  b <- plyr::ddply(meltDF, c(wvars, svars, "variable"), plyr::summarize,
+                    tot = length(value))
+  mdf <- merge(a, b)
+  mdf$prop <- mdf$count / mdf$tot
+  
+  plotDF <- merge(unique(meltDF), mdf)
+  plotDF$value <- factor(plotDF$value,
+                         levels = unique(unlist(lapply(x$data[, xnames], levels))),
+                         ordered = T)
+  
+  p <- ggplot(plotDF, aes(x = value, fill = get(svars), y = prop)) +
+    geom_bar(position = "dodge", stat = "identity") +
+    theme(legend.position = "bottom", ...) +
+    ylab("proportion") +
+    scale_fill_manual(name = "",
+                      values = c("black",
+                                 colorRampPalette(
+                                   RColorBrewer::brewer.pal(9, "Blues"))(x$m + 3)[1:x$m + 3])) +
+    guides(fill = guide_legend(nrow = 1))
+  
+  if (facet == "wrap")
+    if (length(xnames) > 1) {
+      return(p + facet_wrap(c("variable", wvars), scales = "free_x"))
+    } else {
+      if (is.null(wvars)) {
+        return(p)
+      } else {
+        return(p + facet_wrap(wvars, scales = "free_x"))
+      }
+    }
+  
+  if (facet == "grid")
+    if (!is.null(wvars)) {
+      return(p + facet_grid(paste(paste(wvars, collapse = "+"), "~ variable"),
+                           scales = "free"))
+    }
+}
+
+# Now store the plot into a variable and add modifications
+p <- propplot(mice_imputed)
+
+p +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
