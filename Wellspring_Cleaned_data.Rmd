@@ -1,9 +1,9 @@
 ---
 title: "Wellspring Data Cleaning"
-author: "490 Group"
+author: "STA490 Group"
 date: "`r Sys.Date()`"
 output: pdf_document
-subtitle: STA490 Consulting Project EDA
+subtitle: STA490 Consulting Project Data Cleaning
 
 ---
 
