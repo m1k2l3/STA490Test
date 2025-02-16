@@ -148,7 +148,8 @@ data_raw_target <- data_raw %>%
 
 ```{r}
 library(dplyr)
-#Q2
+# Q2
+# Keep Sex with only Male and Female
 data_raw_target <- data_raw_target %>%
   mutate(
     q2 = case_when(
