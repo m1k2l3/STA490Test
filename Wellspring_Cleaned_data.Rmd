@@ -1,0 +1,1550 @@
+---
+title: "Wellspring Data Cleaning"
+author: "490 Group"
+date: "`r Sys.Date()`"
+output: pdf_document
+subtitle: STA490 Consulting Project EDA
+
+---
+
+```{r setup, include=FALSE}
+# Only showing the output instead of raw code
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE)
+```
+
+```{r include=FALSE}
+# Install packages
+library(tidyverse)
+library (writexl)
+library(dplyr)
+library(knitr)
+if (!requireNamespace("kableExtra", quietly = TRUE)) {
+  install.packages("kableExtra", repos = "http://cran.us.r-project.org")
+}
+library(kableExtra)
+library(dplyr)
+library(stringr)
+```
+
+```{r}
+# Import dataset
+library(haven)
+data_raw <- read_sas("C:/Users/maxlo/Downloads/Assignment(2)/Assignment/tr_quan_national_deid.sas7bdat",NULL)
+```
+
+
+```{r}
+# Set up table for raw data type
+raw_data_types <- sapply(data_raw, class)
+raw_data_type_counts <- table(raw_data_types)
+raw_data_type_counts_df <- as.data.frame(raw_data_type_counts)
+```
+ 
+```{r}
+# Select only target questions
+data_raw_target <- data_raw %>%
+  select(
+    id, q2, q3, q12,
+    
+    #Q13
+    v_q131, v_q132, v_q133, v_q134, v_q135, v_q136, v_q137, v_q138, v_q139, v_q1310,
+    v_q1311, v_q1312, v_q1313, v_q1314, v_q1315, v_q1316, v_q1317, v_q1318, v_q1319, v_q1320,
+    v_q1321, v_q1322, v_q1323, v_q1324, v_q1325, v_q1326, v_q1327, v_q1328, v_q1329, v_q1330,
+    v_q1331, v_q1332, v_q1333, v_q1334, v_q1335, v_q1336, v_q1337, v_q1338, v_q1339, v_q1340,
+    v_q1341, v_q1342, v_q1343, v_q1344, v_q1345, v_q1346, v_q1347, v_q1348, v_q1349, v_q1350,
+
+    v_q141, v_q142, v_q143, v_q144, v_q145, v_q146, v_q147, v_q148,
+    
+    q15,
+    
+    v_q201, v_q202, v_q203, v_q204, v_q205, v_q206, 
+    
+    q21, q22a, q22b, q22c, q22d, 
+    
+    q24c, q31f, 
+    
+    v_q321, v_q322, v_q323, v_q324, v_q325, v_q326, v_q327, v_q328,
+    q34a, q34b, q34d, q34f, q34h, q34i, 
+    q35a, q35b, q35d, q35f, q35h, q35i,
+    q36a, q36b, q36d, q36f, q36h, q36i,
+    
+    #Q38
+    v_q381, v_q382, v_q383, v_q384, v_q385, v_q386, v_q387, v_q388, v_q389, v_q3810, 
+    v_q3811, v_q3812, v_q3813, v_q3814, v_q3815, v_q3816, v_q3817, v_q3818, v_q3819, 
+    v_q3821, v_q3822, v_q3823, v_q3824, v_q3825, v_q3826, v_q3827, v_q3828, v_q3829, v_q3830, 
+    v_q3831, v_q3832, v_q3833, v_q3834, v_q3835, v_q3836, v_q3837, v_q3838, v_q3839, v_q3840, 
+    v_q3841, v_q3842, v_q3843, v_q3844, v_q3845, v_q3846, v_q3847, v_q3848, v_q3849, v_q3850, 
+    v_q3851, v_q3852, v_q3853, v_q3854, v_q3855, v_q3856, v_q3857, v_q3858, v_q3859,
+    
+    #Q42
+    v_q421, v_q422, v_q423, v_q424, v_q425, v_q426, v_q427, v_q428, v_q429, v_q4210, 
+    v_q4211, v_q4212, v_q4213, v_q4214, v_q4215, v_q4216, v_q4217, v_q4218, v_q4219, v_q4220, 
+    v_q4221, v_q4222, v_q4223, v_q4224, v_q4225, v_q4226, v_q4228, v_q4229, v_q4230, 
+    v_q4231, v_q4232, v_q4233, v_q4234, v_q4235, v_q4236, v_q4237, v_q4238, v_q4239, v_q4240, 
+    v_q4241, v_q4242, v_q4243, v_q4246, v_q4247, v_q4249, v_q4250, 
+    v_q4251, v_q4252, v_q4253, v_q4254, v_q4255, v_q4256, v_q4257, v_q4258, v_q4260, 
+    v_q4261, v_q4262, v_q4263, v_q4264, v_q4265, v_q4266, v_q4267, v_q4268, v_q4269, v_q4270, 
+    v_q4271, v_q4272, v_q4273, v_q4274, v_q4275, v_q4276,
+    
+    q44a, q44b, q44c, q44d, q44e, q44f, 
+    q45a, q45b, q45c, q45d, q45e, q45f, 
+    q46a, q46b, q46c, q46d, q46e, q46f, 
+    
+    #Q48
+    v_q481, v_q482, v_q483, v_q484, v_q485, v_q486, v_q487, v_q488, v_q489, v_q4810, 
+    v_q4811, v_q4812, v_q4813, v_q4815, v_q4816, v_q4817, v_q4818, v_q4819, 
+    v_q4821, v_q4822, v_q4823, v_q4824, v_q4825, v_q4826, v_q4827, v_q4828, v_q4829, v_q4830, 
+    v_q4831, v_q4832, v_q4833, v_q4834, v_q4835, v_q4836, v_q4837, v_q4838, v_q4839, v_q4840,
+    v_q4841, v_q4842, v_q4843, v_q4844, v_q4845, v_q4846, v_q4847, v_q4848, v_q4849, v_q4850, 
+    v_q4851, v_q4852, v_q4853, v_q4854, v_q4855, v_q4856, v_q4857, v_q4858, v_q4859, v_q4860, 
+    v_q4861,
+    
+    #Q52
+    v_q521, v_q522, v_q523, v_q524, v_q525, v_q526, v_q527, v_q528, v_q529, v_q5210, 
+    v_q5211, v_q5212, v_q5213, v_q5214, v_q5215, v_q5216, v_q5217, v_q5218, v_q5219, v_q5220, 
+    v_q5221, v_q5222, v_q5223, v_q5224, v_q5225, v_q5227, v_q5228, v_q5229, v_q5230, 
+    v_q5232, v_q5233, v_q5234, v_q5235, v_q5237, v_q5238, v_q5239, v_q5240, 
+    v_q5241, v_q5242, v_q5244, v_q5245, v_q5246, v_q5247, v_q5248, v_q5249, v_q5250, 
+    v_q5251, v_q5252, v_q5253, v_q5254, v_q5255, 
+    
+    q54a, q55a, q56a,
+    
+    #Q58
+    v_q581, v_q582, v_q583, v_q584, v_q585, v_q586, v_q587, v_q588, v_q589, v_q5810, 
+    v_q5811, v_q5812, v_q5814, v_q5815, v_q5816, v_q5817, v_q5819, v_q5820, 
+    v_q5821, v_q5822, v_q5823, v_q5824, v_q5825, v_q5826, v_q5827, v_q5828, v_q5829, v_q5830, 
+    v_q5831, v_q5832, v_q5833, v_q5834, v_q5835, v_q5836, v_q5837, v_q5838, v_q5839, v_q5840, 
+    v_q5841, v_q5842, v_q5843, v_q5844, v_q5845, v_q5846, v_q5847, v_q5848, v_q5849, v_q5850, 
+    v_q5851, v_q5852, 
+    
+    #Q62
+    v_q621, v_q622, v_q623, v_q624, v_q625, v_q626, v_q627, v_q628, v_q629, v_q6210, 
+    v_q6211, v_q6212, v_q6213, v_q6214, v_q6215, v_q6216, v_q6217, v_q6218, v_q6219, v_q6220, 
+    v_q6221, v_q6222, v_q6223, v_q6224, v_q6225, v_q6227, v_q6228, v_q6230, 
+    v_q6231, v_q6232, v_q6233, v_q6234, v_q6236, v_q6237, v_q6238, v_q6239, v_q6240, 
+    v_q6241, v_q6242, v_q6243, v_q6244, v_q6245, v_q6246, v_q6247, v_q6248, v_q6249, v_q6250, 
+    v_q6251, v_q6252, v_q6253, 
+    
+    #Q64
+    q64a, q64b, q64c, q64d, q64e, q64f, q64g, q64h, 
+    
+    #Q65
+    v_q651, v_q652, v_q653, v_q654, v_q655, v_q656,
+    
+    q73, q74, 
+    
+    #Q75
+    v_q751, v_q752, v_q753, v_q754, v_q755, v_q756, v_q757, v_q758, v_q759, v_q7510, 
+    v_q7511, v_q7512, v_q7513, v_q7514, v_q7515, v_q7516, v_q7517, v_q7518, v_q7519, v_q7520, 
+    v_q7521, v_q7522, 
+    
+    
+    q76, q77, q78,
+    
+    #Q79
+    v_q791, v_q792, v_q793, v_q794, v_q795, v_q796, v_q797, v_q798, v_q799, v_q7910, 
+    v_q7911, 
+    
+    q80, 
+    q81a, q81b, 
+    
+    #Q82
+    v_q821, v_q822, v_q823, v_q824, v_q825, v_q826, v_q827
+  )
+
+```
+
+```{r}
+library(dplyr)
+#Q2
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q2 = case_when(
+      q2 == 1 ~ "Male",
+      q2 == 2 ~ "Female",
+      q2 %in% c(3, 4, 5) ~ "No response/Other",
+      TRUE ~ "No response/Other" 
+    )
+  )
+
+#Q3
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q3 = case_when(
+      q3 == 1 ~ "Under 18",
+      q3 == 2 ~ "18-24",
+      q3 == 3 ~ "25-29",
+      q3 == 4 ~ "30-34",
+      q3 == 5 ~ "35-44",
+      q3 == 6 ~ "45-54",
+      q3 == 7 ~ "55-64",
+      q3 == 8 ~ "65-74",
+      q3 == 9 ~ "75-84",
+      q3 == 10 ~ "85 or over",
+      TRUE ~ "No response/Other" 
+    )
+  )
+
+#Q12
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q12 = case_when(
+      q12 == 1 ~ "Yes",
+      q12 == 2 ~ "No",
+      q12 == 3 ~ "Unsure",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q13
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q13 = case_when(
+      v_q131 == 1 ~ "1",
+      v_q132 == 2 ~ "2",
+      v_q133 == 3 ~ "3",
+      v_q134 == 4 ~ "4",
+      v_q135 == 5 ~ "5",
+      v_q136 == 6 ~ "6",
+      v_q137 == 7 ~ "7",
+      v_q138 == 8 ~ "8",
+      v_q139 == 9 ~ "9",
+      v_q1310 == 10 ~ "10",
+      v_q1311 == 11 ~ "11",
+      v_q1312 == 12 ~ "12",
+      v_q1313 == 13 ~ "13",
+      v_q1314 == 14 ~ "14",
+      v_q1315 == 15 ~ "15",
+      v_q1316 == 16 ~ "16",
+      v_q1317 == 17 ~ "17",
+      v_q1318 == 18 ~ "18",
+      v_q1319 == 19 ~ "19",
+      v_q1320 == 20 ~ "20",
+      v_q1321 == 21 ~ "21",
+      v_q1322 == 22 ~ "22",
+      v_q1323 == 23 ~ "23",
+      v_q1324 == 24 ~ "24",
+      v_q1325 == 25 ~ "25",
+      v_q1326 == 26 ~ "26",
+      v_q1327 == 27 ~ "27",
+      v_q1328 == 28 ~ "28",
+      v_q1329 == 29 ~ "29",
+      v_q1330 == 30 ~ "30",
+      v_q1331 == 31 ~ "31",
+      v_q1332 == 32 ~ "32",
+      v_q1333 == 33 ~ "33",
+      v_q1334 == 34 ~ "34",
+      v_q1335 == 35 ~ "35",
+      v_q1336 == 36 ~ "36",
+      v_q1337 == 37 ~ "37",
+      v_q1338 == 38 ~ "38",
+      v_q1339 == 39 ~ "39",
+      v_q1340 == 40 ~ "40",
+      v_q1341 == 41 ~ "41",
+      v_q1342 == 42 ~ "42",
+      v_q1343 == 43 ~ "43",
+      v_q1344 == 44 ~ "44",
+      v_q1345 == 45 ~ "45",
+      v_q1346 == 46 ~ "46",
+      v_q1347 == 47 ~ "47",
+      v_q1348 == 48 ~ "48",
+      v_q1349 == 49 ~ "49",
+      v_q1350 == 50 ~ "50",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q13 = case_when(
+      q13 %in% c(1:13, 41, 45) ~ "Hematologic (Blood-related)", 
+      q13 %in% c(14,15) ~ "Breast Cancer", 
+      q13 %in% c(16:17, 30, 31, 38, 40, 44) ~ "Digestive System", 
+      q13 %in% c(20:23, 26, 27, 32,33) ~ "Urinary and Reproductive", 
+      q13 %in% c(18, 19, 24, 25, 28, 29, 34:37, 39, 42, 43, 46, 47) ~ "Respiratory and Other", 
+      q13 %in% c(48, 49, 50) ~ "No response/Other", 
+      TRUE ~ "No response/Other" 
+    )
+  )
+
+#Q14
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q14 = case_when(
+      v_q141 == 1 ~ "Prior to 2010",
+      v_q142 == 2 ~ "2010~2015",
+      v_q143 == 3 ~ "2010~2015",
+      v_q144 == 4 ~ "2010~2015",
+      v_q145 == 5 ~ "2010~2015",
+      v_q146 == 6 ~ "2010~2015",
+      v_q147 == 7 ~ "2010~2015",
+      v_q148 == 8 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q15
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q15 = case_when(
+      q15 == 1 ~ "Metastatic",
+      q15 == 2 ~ "No, wasn't diagnosed as metastatic but it spread afterwards",
+      q15 == 3 ~ "No, wasn't diagnosed as metastatic and it did not spread",
+      q15 == 4 ~ "Unsure",
+      q15 == 5 ~ "No response/Other",
+      TRUE ~ "No response/Other" 
+    )
+  )
+
+#Q20
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q20 = case_when(
+      v_q201 == 1 ~ "Care Provider",
+      v_q202 == 2 ~ "Specialist",
+      v_q203 == 3 ~ "Both",
+      v_q204 == 4 ~ "No one",
+      v_q205 == 5 ~ "No response/Other",
+      v_q206 == 6 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q21
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q21 = case_when(
+      q21 == 1 ~ "Not at all involved",
+      q21 == 2 ~ "Not very involved",
+      q21 == 3 ~ "Somewhat involved",
+      q21 == 4 ~ "Very involved",
+      q21 == 5 ~ "No family doctor/nurse practitioner",
+      q21 == 6 ~ "No response/Other",
+      q21 == 7 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+data_raw_target$q21 <- factor(data_raw_target$q21, levels = c("No response/Other", "No family doctor/nurse practitioner", "Not at all involved", "Not very involved", "Somewhat involved", "Very involved"), ordered = TRUE)
+
+#Q22
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q22a = case_when(
+      q22a == 1 ~ "Strongly disagree",
+      q22a == 2 ~ "Somewhat disagree",
+      q22a == 3 ~ "Neither agree nor disagree",
+      q22a == 4 ~ "Somewhat agree",
+      q22a == 5 ~ "Strongly agree",
+      q22a %in% c(6, 7) ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    ),
+    q22b = case_when(
+      q22b == 1 ~ "Strongly disagree",
+      q22b == 2 ~ "Somewhat disagree",
+      q22b == 3 ~ "Neither agree nor disagree",
+      q22b == 4 ~ "Somewhat agree",
+      q22b == 5 ~ "Strongly agree",
+      q22b %in% c(6, 7) ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    ),
+    q22c = case_when(
+      q22c == 1 ~ "Strongly disagree",
+      q22c == 2 ~ "Somewhat disagree",
+      q22c == 3 ~ "Neither agree nor disagree",
+      q22c == 4 ~ "Somewhat agree",
+      q22c == 5 ~ "Strongly agree",
+      q22c %in% c(6, 7) ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    ),
+    q22d = case_when(
+      q22d == 1 ~ "Strongly disagree",
+      q22d == 2 ~ "Somewhat disagree",
+      q22d == 3 ~ "Neither agree nor disagree",
+      q22d == 4 ~ "Somewhat agree",
+      q22d == 5 ~ "Strongly agree",
+      q22d %in% c(6, 7) ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+data_raw_target$q22a <- factor(data_raw_target$q22a, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
+
+data_raw_target$q22b <- factor(data_raw_target$q22b, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
+data_raw_target$q22c <- factor(data_raw_target$q22c, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
+data_raw_target$q22d <- factor(data_raw_target$q22d, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
+
+
+#Q24
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q24c = case_when(
+      q24c == 1 ~ "Very poor",
+      q24c == 2 ~ "Poor",
+      q24c == 3 ~ "Fair",
+      q24c == 4 ~ "Good",
+      q24c == 5 ~ "Very good",
+      q24c %in% c(6, 7) ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q31
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q31f = case_when(
+      q31f == 1 ~ "Strongly disagree",
+      q31f == 2 ~ "Somewhat disagree",
+      q31f == 3 ~ "Neither agree nor disagree",
+      q31f == 4 ~ "Somewhat agree",
+      q31f == 5 ~ "Strongly agree",
+      q31f %in% c(6, 7) ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q32
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q32 = case_when(
+      v_q321 == 1 ~ "6 months to 1 year after",
+      v_q322 == 2 ~ "1 to 2 years after",
+      v_q323 == 3 ~ "2 to 3 years after",
+      v_q324 == 4 ~ "More than 3 years after",
+      v_q325 == 5 ~ "All periods equally challenging",
+      v_q326 == 6 ~ "There were no challenging periods",
+      v_q327 %in% c(7, 8) ~ "No response/Other", 
+      TRUE ~ "No response/Other"
+    )
+  )
+```
+
+```{r}
+# Physical Challenge
+# Q343536
+data_raw_target <- data_raw_target %>%
+  mutate(PHY_1_Swelling = case_when(
+      q34a == 1 ~ "Not a concern",
+      q34a == 2 ~ "Small Concern",
+      q34a == 3 ~ "Moderate Concern",
+      q34a == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q35a == 1 ~ "Have sought help",
+        q35a == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q36a == 1 ~ "Didn't get any help",
+        q36a == 2 ~ "Very easy to get helps",
+        q36a == 3 ~ "Easy to get helps",
+        q36a == 4 ~ "Hard to get helps",
+        q36a == 5 ~ "Very hard to get helps",
+        q36a == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+
+
+
+data_raw_target <- data_raw_target %>%
+  mutate(PHY_2_Tiredness = case_when(
+      q34b == 1 ~ "Not a concern",
+      q34b == 2 ~ "Small Concern",
+      q34b == 3 ~ "Moderate Concern",
+      q34b == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q35b == 1 ~ "Have sought help",
+        q35b == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q36b == 1 ~ "Didn't get any help",
+        q36b == 2 ~ "Very easy to get helps",
+        q36b == 3 ~ "Easy to get helps",
+        q36b == 4 ~ "Hard to get helps",
+        q36b == 5 ~ "Very hard to get helps",
+        q36b == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(PHY_3_Chronic_pain = case_when(
+      q34d == 1 ~ "Not a concern",
+      q34d == 2 ~ "Small Concern",
+      q34d == 3 ~ "Moderate Concern",
+      q34d == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q35d == 1 ~ "Have sought help",
+        q35d == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q36d == 1 ~ "Didn't get any help",
+        q36d == 2 ~ "Very easy to get helps",
+        q36d == 3 ~ "Easy to get helps",
+        q36d == 4 ~ "Hard to get helps",
+        q36d == 5 ~ "Very hard to get helps",
+        q36d == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(PHY_4_Gastrointestinal = case_when(
+      q34f == 1 ~ "Not a concern",
+      q34f == 2 ~ "Small Concern",
+      q34f == 3 ~ "Moderate Concern",
+      q34f == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q35f == 1 ~ "Have sought help",
+        q35f == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q36f == 1 ~ "Didn't get any help",
+        q36f == 2 ~ "Very easy to get helps",
+        q36f == 3 ~ "Easy to get helps",
+        q36f == 4 ~ "Hard to get helps",
+        q36f == 5 ~ "Very hard to get helps",
+        q36f == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(PHY_5_Memory = case_when(
+      q34h == 1 ~ "Not a concern",
+      q34h == 2 ~ "Small Concern",
+      q34h == 3 ~ "Moderate Concern",
+      q34h == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q35h == 1 ~ "Have sought help",
+        q35h == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q36h == 1 ~ "Didn't get any help",
+        q36h == 2 ~ "Very easy to get helps",
+        q36h == 3 ~ "Easy to get helps",
+        q36h == 4 ~ "Hard to get helps",
+        q36h == 5 ~ "Very hard to get helps",
+        q36h == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(PHY_6_Sexual = case_when(
+      q34i == 1 ~ "Not a concern",
+      q34i == 2 ~ "Small Concern",
+      q34i == 3 ~ "Moderate Concern",
+      q34i == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q35i == 1 ~ "Have sought help",
+        q35i == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q36i == 1 ~ "Didn't get any help",
+        q36i == 2 ~ "Very easy to get helps",
+        q36i == 3 ~ "Easy to get helps",
+        q36i == 4 ~ "Hard to get helps",
+        q36i == 5 ~ "Very hard to get helps",
+        q36i == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+#Q38
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q38 = case_when(
+      v_q381 == 1 ~ "1",
+      v_q382 == 2 ~ "2",
+      v_q383 == 3 ~ "3",
+      v_q384 == 4 ~ "4",
+      v_q385 == 5 ~ "5",
+      v_q386 == 6 ~ "6",
+      v_q387 == 7 ~ "7",
+      v_q388 == 8 ~ "8",
+      v_q389 == 9 ~ "9",
+      v_q3810 == 10 ~ "10",
+      v_q3811 == 11 ~ "11",
+      v_q3812 == 12 ~ "12",
+      v_q3813 == 13 ~ "13",
+      v_q3814 == 14 ~ "14",
+      v_q3815 == 15 ~ "15",
+      v_q3816 == 16 ~ "16",
+      v_q3817 == 17 ~ "17",
+      v_q3818 == 18 ~ "18",
+      v_q3819 == 19 ~ "19",
+      v_q3821 == 21 ~ "21",
+      v_q3822 == 22 ~ "22",
+      v_q3823 == 23 ~ "23",
+      v_q3824 == 24 ~ "24",
+      v_q3825 == 25 ~ "25",
+      v_q3826 == 26 ~ "26",
+      v_q3827 == 27 ~ "27",
+      v_q3828 == 28 ~ "28",
+      v_q3829 == 29 ~ "29",
+      v_q3830 == 30 ~ "30",
+      v_q3831 == 31 ~ "31",
+      v_q3832 == 32 ~ "32",
+      v_q3833 == 33 ~ "33",
+      v_q3834 == 34 ~ "34",
+      v_q3835 == 35 ~ "35",
+      v_q3836 == 36 ~ "36",
+      v_q3837 == 37 ~ "37",
+      v_q3838 == 38 ~ "38",
+      v_q3839 == 39 ~ "39",
+      v_q3840 == 40 ~ "40",
+      v_q3841 == 41 ~ "41",
+      v_q3842 == 42 ~ "42",
+      v_q3843 == 43 ~ "43",
+      v_q3844 == 44 ~ "44",
+      v_q3845 == 45 ~ "45",
+      v_q3846 == 46 ~ "46",
+      v_q3847 == 47 ~ "47",
+      v_q3848 == 48 ~ "48",
+      v_q3849 == 49 ~ "49",
+      v_q3850 == 50 ~ "50",
+      v_q3851 == 51 ~ "51",
+      v_q3852 == 52 ~ "52",
+      v_q3853 == 53 ~ "53",
+      v_q3854 == 54 ~ "54",
+      v_q3855 == 55 ~ "55",
+      v_q3856 == 56 ~ "56",
+      v_q3857 == 57 ~ "57",
+      v_q3858 == 58 ~ "58",
+      v_q3859 == 59 ~ "59",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q38 = case_when(
+      q38 %in% c(1, 2, 3, 4, 5, 6, 7, 8) ~ "Access/Knowledge Barriers",           
+      q38 %in% c(9, 10, 11, 12, 35, 36, 37, 41, 42) ~ "System/Service Issues",             
+      q38 %in% c(13, 14, 15, 16, 17, 18, 19) ~ "Not a concern", 
+      q38 %in% c(21, 22, 23) ~ "Healthcare Provider Issues", 
+      q38 %in% c(24, 25, 26, 27, 28, 29, 30) ~ "Belief or Personal Preferences", 
+      q38 %in% c(31, 32, 33, 34, 46, 47, 48, 49, 50, 51) ~ "Had support from others", 
+      q38 %in% c(38, 39, 40) ~ "Treatment Ineffectiveness/Concerns", 
+      q38 %in% c(43, 44, 45, 52, 53, 54, 55, 56, 57) ~ "Other/Unspecified", 
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q42
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q42 = case_when(
+      v_q421 == 1 ~ "1",
+      v_q422 == 2 ~ "2",
+      v_q423 == 3 ~ "3",
+      v_q424 == 4 ~ "4",
+      v_q425 == 5 ~ "5",
+      v_q426 == 6 ~ "6",
+      v_q427 == 7 ~ "7",
+      v_q428 == 8 ~ "8",
+      v_q429 == 9 ~ "9",
+      v_q4210 == 10 ~ "10",
+      v_q4211 == 11 ~ "11",
+      v_q4212 == 12 ~ "12",
+      v_q4213 == 13 ~ "13",
+      v_q4214 == 14 ~ "14",
+      v_q4215 == 15 ~ "15",
+      v_q4216 == 16 ~ "16",
+      v_q4217 == 17 ~ "17",
+      v_q4218 == 18 ~ "18",
+      v_q4219 == 19 ~ "19",
+      v_q4220 == 20 ~ "20",
+      v_q4221 == 21 ~ "21",
+      v_q4222 == 22 ~ "22",
+      v_q4223 == 23 ~ "23",
+      v_q4224 == 24 ~ "24",
+      v_q4225 == 25 ~ "25",
+      v_q4226 == 26 ~ "26",
+      v_q4228 == 28 ~ "28",
+      v_q4229 == 29 ~ "29",
+      v_q4230 == 30 ~ "30",
+      v_q4231 == 31 ~ "31",
+      v_q4232 == 32 ~ "32",
+      v_q4233 == 33 ~ "33",
+      v_q4234 == 34 ~ "34",
+      v_q4235 == 35 ~ "35",
+      v_q4236 == 36 ~ "36",
+      v_q4237 == 37 ~ "37",
+      v_q4238 == 38 ~ "38",
+      v_q4239 == 39 ~ "39",
+      v_q4240 == 40 ~ "40",
+      v_q4241 == 41 ~ "41",
+      v_q4242 == 42 ~ "42",
+      v_q4243 == 43 ~ "43",
+      v_q4246 == 46 ~ "46",
+      v_q4247 == 47 ~ "47",
+      v_q4249 == 49 ~ "49",
+      v_q4250 == 50 ~ "50",
+      v_q4251 == 51 ~ "51",
+      v_q4252 == 52 ~ "52",
+      v_q4253 == 53 ~ "53",
+      v_q4254 == 54 ~ "54",
+      v_q4255 == 55 ~ "55",
+      v_q4256 == 56 ~ "56",
+      v_q4257 == 57 ~ "57",
+      v_q4258 == 58 ~ "58",
+      v_q4260 == 60 ~ "60",
+      v_q4261 == 61 ~ "61",
+      v_q4262 == 62 ~ "62",
+      v_q4263 == 63 ~ "63",
+      v_q4264 == 64 ~ "64",
+      v_q4265 == 65 ~ "65",
+      v_q4266 == 66 ~ "66",
+      v_q4267 == 67 ~ "67",
+      v_q4268 == 68 ~ "68",
+      v_q4269 == 69 ~ "69",
+      v_q4270 == 70 ~ "70",
+      v_q4271 == 71 ~ "71",
+      v_q4272 == 72 ~ "72",
+      v_q4273 == 73 ~ "73",
+      v_q4274 == 74 ~ "74",
+      v_q4275 == 75 ~ "75",
+      v_q4276 == 76 ~ "76",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q42 = case_when(
+      # Group 1: Healthcare Professionals
+      q42 %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 28, 29, 30, 31, 32, 33, 39, 40) ~ "Healthcare Professionals",
+      q42 %in% c(11, 12, 13, 14, 41, 45) ~ "Mental Health/Wellness",
+      q42 %in% c(15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 34, 35, 36, 37, 38) ~ "Alternative/Complementary Support",
+      q42 %in% c(42, 43, 44, 47, 48, 49, 46, 55, 50, 51, 52, 53, 54, 56, 57, 58, 59) ~ "Family and Friends",
+      q42 %in% c(19, 20, 60, 61, 62, 63, 64, 65, 66, 67) ~ "Community/Religious Support",
+      q42 %in% c(68, 69, 70, 71, 72, 73, 74, 75, 76) ~ "Other Reasons",
+      TRUE ~ "No response/Other"
+    )
+  )
+```
+
+```{r}
+#Emotional Challenge
+# Q444546
+data_raw_target <- data_raw_target %>%
+  mutate(EMO_1_Depression = case_when(
+      q44a == 1 ~ "Not a concern",
+      q44a == 2 ~ "Small Concern",
+      q44a == 3 ~ "Moderate Concern",
+      q44a == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q45a == 1 ~ "Have sought help",
+        q45a == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q46a == 1 ~ "Didn't get any help",
+        q46a == 2 ~ "Very easy to get helps",
+        q46a == 3 ~ "Easy to get helps",
+        q46a == 4 ~ "Hard to get helps",
+        q46a == 5 ~ "Very hard to get helps",
+        q46a == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(EMO_2_Anxiety = case_when(
+      q44b == 1 ~ "Not a concern",
+      q44b == 2 ~ "Small Concern",
+      q44b == 3 ~ "Moderate Concern",
+      q44b == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q45b == 1 ~ "Have sought help",
+        q45b == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q46b == 1 ~ "Didn't get any help",
+        q46b == 2 ~ "Very easy to get helps",
+        q46b == 3 ~ "Easy to get helps",
+        q46b == 4 ~ "Hard to get helps",
+        q46b == 5 ~ "Very hard to get helps",
+        q46b == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(EMO_3_Relationship_Family = case_when(
+      q44c == 1 ~ "Not a concern",
+      q44c == 2 ~ "Small Concern",
+      q44c == 3 ~ "Moderate Concern",
+      q44c == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q45c == 1 ~ "Have sought help",
+        q45c == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q46c == 1 ~ "Didn't get any help",
+        q46c == 2 ~ "Very easy to get helps",
+        q46c == 3 ~ "Easy to get helps",
+        q46c == 4 ~ "Hard to get helps",
+        q46c == 5 ~ "Very hard to get helps",
+        q46c == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(EMO_4_Relationship_Friend = case_when(
+      q44d == 1 ~ "Not a concern",
+      q44d == 2 ~ "Small Concern",
+      q44d == 3 ~ "Moderate Concern",
+      q44d == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q45d == 1 ~ "Have sought help",
+        q45d == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q46d == 1 ~ "Didn't get any help",
+        q46d == 2 ~ "Very easy to get helps",
+        q46d == 3 ~ "Easy to get helps",
+        q46d == 4 ~ "Hard to get helps",
+        q46d == 5 ~ "Very hard to get helps",
+        q46d == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(EMO_5_Appearance = case_when(
+      q44e == 1 ~ "Not a concern",
+      q44e == 2 ~ "Small Concern",
+      q44e == 3 ~ "Moderate Concern",
+      q44e == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q45e == 1 ~ "Have sought help",
+        q45e == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q46e == 1 ~ "Didn't get any help",
+        q46e == 2 ~ "Very easy to get helps",
+        q46e == 3 ~ "Easy to get helps",
+        q46e == 4 ~ "Hard to get helps",
+        q46e == 5 ~ "Very hard to get helps",
+        q46e == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(EMO_6_Sexual = case_when(
+      q44f == 1 ~ "Not a concern",
+      q44f == 2 ~ "Small Concern",
+      q44f == 3 ~ "Moderate Concern",
+      q44f == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q45f == 1 ~ "Have sought help",
+        q45f == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q46f == 1 ~ "Didn't get any help",
+        q46f == 2 ~ "Very easy to get helps",
+        q46f == 3 ~ "Easy to get helps",
+        q46f == 4 ~ "Hard to get helps",
+        q46f == 5 ~ "Very hard to get helps",
+        q46f == 6 ~ "Hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+
+#Q48
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q48 = case_when(
+      v_q481 == 1 ~ "1",
+      v_q482 == 2 ~ "2",
+      v_q483 == 3 ~ "3",
+      v_q484 == 4 ~ "4",
+      v_q485 == 5 ~ "5",
+      v_q486 == 6 ~ "6",
+      v_q487 == 7 ~ "7",
+      v_q488 == 8 ~ "8",
+      v_q489 == 9 ~ "9",
+      v_q4810 == 10 ~ "10",
+      v_q4811 == 11 ~ "11",
+      v_q4812 == 12 ~ "12",
+      v_q4813 == 13 ~ "13",
+      v_q4815 == 15 ~ "15",
+      v_q4816 == 16 ~ "16",
+      v_q4817 == 17 ~ "17",
+      v_q4818 == 18 ~ "18",
+      v_q4819 == 19 ~ "19",
+      v_q4821 == 21 ~ "21",
+      v_q4822 == 22 ~ "22",
+      v_q4823 == 23 ~ "23",
+      v_q4824 == 24 ~ "24",
+      v_q4825 == 25 ~ "25",
+      v_q4826 == 26 ~ "26",
+      v_q4827 == 27 ~ "27",
+      v_q4828 == 28 ~ "28",
+      v_q4829 == 29 ~ "29",
+      v_q4830 == 30 ~ "30",
+      v_q4831 == 31 ~ "31",
+      v_q4832 == 32 ~ "32",
+      v_q4833 == 33 ~ "33",
+      v_q4834 == 34 ~ "34",
+      v_q4835 == 35 ~ "35",
+      v_q4836 == 36 ~ "36",
+      v_q4837 == 37 ~ "37",
+      v_q4838 == 38 ~ "38",
+      v_q4839 == 39 ~ "39",
+      v_q4840 == 40 ~ "40",
+      v_q4841 == 41 ~ "41",
+      v_q4842 == 42 ~ "42",
+      v_q4843 == 43 ~ "43",
+      v_q4844 == 44 ~ "44",
+      v_q4845 == 45 ~ "45",
+      v_q4846 == 46 ~ "46",
+      v_q4847 == 47 ~ "47",
+      v_q4848 == 48 ~ "48",
+      v_q4849 == 49 ~ "49",
+      v_q4850 == 50 ~ "50",
+      v_q4851 == 51 ~ "51",
+      v_q4852 == 52 ~ "52",
+      v_q4853 == 53 ~ "53",
+      v_q4854 == 54 ~ "54",
+      v_q4855 == 55 ~ "55",
+      v_q4856 == 56 ~ "56",
+      v_q4857 == 57 ~ "57",
+      v_q4858 == 58 ~ "58",
+      v_q4859 == 59 ~ "59",
+      v_q4860 == 60 ~ "60",
+      v_q4861 == 61 ~ "61",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q48 = case_when(
+      q48 %in% c(3, 4, 5, 6,9 ,10, 11, 12, 39, 40, 41) ~ "Lack of Awareness/Resources",
+      q48 %in% c(7, 8, 33, 37, 53, 54) ~ "Emotional Barriers",
+      q48 %in% c(15, 16, 17, 18, 19, 20, 21, 22, 44, 45, 46) ~ "Had Support",
+      q48 %in% c(13, 32, 42, 43, 51) ~ "Practical Issues",
+      q48 %in% c(1, 2, 23, 24, 25, 28, 29, 30, 31, 47, 48, 49, 50) ~ "Attitude/Perception",
+      q48 %in% c(26, 27, 35, 38) ~ "Health System-Related",
+      q48 %in% c(34, 36) ~ "Faith-Based",
+      q48 %in% c(52, 55, 56, 57, 58, 59, 60, 61) ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q52
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q52 = case_when(
+      v_q521 == 1 ~ "1",
+      v_q522 == 2 ~ "2",
+      v_q523 == 3 ~ "3",
+      v_q524 == 4 ~ "4",
+      v_q525 == 5 ~ "5",
+      v_q526 == 6 ~ "6",
+      v_q527 == 7 ~ "7",
+      v_q528 == 8 ~ "8",
+      v_q529 == 9 ~ "9",
+      v_q5210 == 10 ~ "10",
+      v_q5211 == 11 ~ "11",
+      v_q5212 == 12 ~ "12",
+      v_q5213 == 13 ~ "13",
+      v_q5214 == 14 ~ "14",
+      v_q5215 == 15 ~ "15",
+      v_q5216 == 16 ~ "16",
+      v_q5217 == 17 ~ "17",
+      v_q5218 == 18 ~ "18",
+      v_q5219 == 19 ~ "19",
+      v_q5220 == 20 ~ "20",
+      v_q5221 == 21 ~ "21",
+      v_q5222 == 22 ~ "22",
+      v_q5223 == 23 ~ "23",
+      v_q5224 == 24 ~ "24",
+      v_q5225 == 25 ~ "25",
+      v_q5227 == 27 ~ "27",
+      v_q5228 == 28 ~ "28",
+      v_q5229 == 29 ~ "29",
+      v_q5230 == 30 ~ "30",
+      v_q5232 == 32 ~ "32",
+      v_q5233 == 33 ~ "33",
+      v_q5234 == 34 ~ "34",
+      v_q5235 == 35 ~ "35",
+      v_q5237 == 37 ~ "37",
+      v_q5238 == 38 ~ "38",
+      v_q5239 == 39 ~ "39",
+      v_q5240 == 40 ~ "40",
+      v_q5241 == 41 ~ "41",
+      v_q5242 == 42 ~ "42",
+      v_q5244 == 44 ~ "44",
+      v_q5245 == 45 ~ "45",
+      v_q5246 == 46 ~ "46",
+      v_q5247 == 47 ~ "47",
+      v_q5248 == 48 ~ "48",
+      v_q5249 == 49 ~ "49",
+      v_q5250 == 50 ~ "50",
+      v_q5251 == 51 ~ "51",
+      v_q5252 == 52 ~ "52",
+      v_q5253 == 53 ~ "53",
+      v_q5254 == 54 ~ "54",
+      v_q5255 == 55 ~ "55",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q52 = case_when(
+      q52 %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 27, 28, 29, 30) ~ "Healthcare Professionals",
+      q52 %in% c(14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25) ~ "Community Service",
+      q52 %in% c(32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42) ~ "Family/Friends",
+      q52 %in% c(44, 45, 46, 47, 48) ~ "Other people",
+      q52 %in% c(49, 50, 51, 52, 53, 54) ~ "No help/dealing with self",
+      TRUE ~ "No response/Other"
+    )
+  )
+```
+
+PENNY
+```{r}
+#Practical Challenge
+#Q545556
+data_raw_target <- data_raw_target %>%
+  mutate(PRA_1_Returning = case_when(
+      q54a == 1 ~ "Not a Concern",
+      q54a == 2 ~ "Small Concern",
+      q54a == 3 ~ "Moderate Concern",
+      q54a == 4 ~ "Big Concern",
+      TRUE ~ "No response/Other"
+    ) %>% paste(
+      case_when(
+        q55a == 1 ~ "Have sought help",
+        q55a == 2 ~ "Not sought help",
+        TRUE ~ "No response/Other"
+      ),
+      case_when(
+        q56a == 1 ~ "Didn't get any help",
+        q56a == 2 ~ "Very easy to get helps",
+        q56a == 3 ~ "Easy to get helps",
+        q56a == c(4,6) ~ "Hard to get helps",
+        q56a == 5 ~ "Very hard to get helps",
+        TRUE ~ "No response/Other"
+      ),
+      sep = ";"
+    )
+  )
+#Q58
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q58 = case_when(
+      v_q581 == 1 ~ "1",
+      v_q582 == 2 ~ "2",
+      v_q583 == 3 ~ "3",
+      v_q584 == 4 ~ "4",
+      v_q585 == 5 ~ "5",
+      v_q586 == 6 ~ "6",
+      v_q587 == 7 ~ "7",
+      v_q588 == 8 ~ "8",
+      v_q589 == 9 ~ "9",
+      v_q5810 == 10 ~ "10",
+      v_q5811 == 11 ~ "11",
+      v_q5812 == 12 ~ "12",
+      v_q5814 == 14 ~ "14",
+      v_q5815 == 15 ~ "15",
+      v_q5816 == 16 ~ "16",
+      v_q5817 == 17 ~ "17",
+      v_q5819 == 19 ~ "19",
+      v_q5820 == 20 ~ "20",
+      v_q5821 == 21 ~ "21",
+      v_q5822 == 22 ~ "22",
+      v_q5823 == 23 ~ "23",
+      v_q5824 == 24 ~ "24",
+      v_q5825 == 25 ~ "25",
+      v_q5826 == 26 ~ "26",
+      v_q5827 == 27 ~ "27",
+      v_q5828 == 28 ~ "28",
+      v_q5829 == 29 ~ "29",
+      v_q5830 == 30 ~ "30",
+      v_q5831 == 31 ~ "31",
+      v_q5832 == 32 ~ "32",
+      v_q5833 == 33 ~ "33",
+      v_q5834 == 34 ~ "34",
+      v_q5835 == 35 ~ "35",
+      v_q5836 == 36 ~ "36",
+      v_q5837 == 37 ~ "37",
+      v_q5838 == 38 ~ "38",
+      v_q5839 == 39 ~ "39",
+      v_q5840 == 40 ~ "40",
+      v_q5841 == 41 ~ "41",
+      v_q5842 == 42 ~ "42",
+      v_q5843 == 43 ~ "43",
+      v_q5844 == 44 ~ "44",
+      v_q5845 == 45 ~ "45",
+      v_q5846 == 46 ~ "46",
+      v_q5847 == 47 ~ "47",
+      v_q5848 == 48 ~ "48",
+      v_q5849 == 49 ~ "49",
+      v_q5850 == 50 ~ "50",
+      v_q5851 == 51 ~ "51",
+      v_q5852 == 52 ~ "52",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q58 = case_when(
+      q58 %in% c(1, 2, 3, 4, 5, 6, 7, 8, 47) ~ "Embarrassment or Lack of Awareness",
+      q58 %in% c(9, 10, 28, 35) ~ "Lack of Resources or Access",
+      q58 %in% c(14, 15, 16, 17, 18, 22, 39, 40, 41) ~ "Support from Family or Community",
+      q58 %in% c(11, 12, 19, 20, 21, 23, 43) ~ "Assumed Normal to Handle",
+      q58 %in% c(24, 25, 27, 29, 30, 31, 32, 44) ~ "Financial or Insurance Issues",
+      q58 %in% c(26, 33, 34, 36, 37, 38, 42, 45, 46) ~ "Lost Hope or Didn't Need Help",
+      q58 %in% c(48, 49, 50, 51, 52) ~"No response/Other", 
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q62
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q62 = case_when(
+      v_q621 == 1 ~ "1",
+      v_q622 == 2 ~ "2",
+      v_q623 == 3 ~ "3",
+      v_q624 == 4 ~ "4",
+      v_q625 == 5 ~ "5",
+      v_q626 == 6 ~ "6",
+      v_q627 == 7 ~ "7",
+      v_q628 == 8 ~ "8",
+      v_q629 == 9 ~ "9",
+      v_q6210 == 10 ~ "10",
+      v_q6211 == 11 ~ "11",
+      v_q6212 == 12 ~ "12",
+      v_q6213 == 13 ~ "13",
+      v_q6214 == 14 ~ "14",
+      v_q6215 == 15 ~ "15",
+      v_q6216 == 16 ~ "16",
+      v_q6217 == 17 ~ "17",
+      v_q6218 == 18 ~ "18",
+      v_q6219 == 19 ~ "19",
+      v_q6220 == 20 ~ "20",
+      v_q6221 == 21 ~ "21",
+      v_q6222 == 22 ~ "22",
+      v_q6223 == 23 ~ "23",
+      v_q6224 == 24 ~ "24",
+      v_q6225 == 25 ~ "25",
+      v_q6227 == 27 ~ "27",
+      v_q6228 == 28 ~ "28",
+      v_q6230 == 30 ~ "30",
+      v_q6231 == 31 ~ "31",
+      v_q6232 == 32 ~ "32",
+      v_q6233 == 33 ~ "33",
+      v_q6234 == 34 ~ "34",
+      v_q6236 == 36 ~ "36",
+      v_q6237 == 37 ~ "37",
+      v_q6238 == 38 ~ "38",
+      v_q6239 == 39 ~ "39",
+      v_q6240 == 40 ~ "40",
+      v_q6241 == 41 ~ "41",
+      v_q6242 == 42 ~ "42",
+      v_q6243 == 43 ~ "43",
+      v_q6244 == 44 ~ "44",
+      v_q6245 == 45 ~ "45",
+      v_q6246 == 46 ~ "46",
+      v_q6247 == 47 ~ "47",
+      v_q6248 == 48 ~ "48",
+      v_q6249 == 49 ~ "49",
+      v_q6250 == 50 ~ "50",
+      v_q6251 == 51 ~ "51",
+      v_q6252 == 52 ~ "52",
+      v_q6253 == 53 ~ "53",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q62 = case_when(
+      q62 %in% c("1", "2","3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "27", "28") ~ "Healthcare Professionals",
+      q62 %in% c("14", "15","16", "17","20", "21", "22","23","36","41") ~ "Community and Cancer Support Groups",
+      q62 %in% c("30","31", "32", "33", "34","44","45") ~ "Family and Friends",
+      q62 %in% c("18", "19") ~ "Religious Support",
+      q62 %in% c("49", "50") ~ "Self-Management",
+      q62 %in% c("37", "38", "39", "40","43") ~ "Work or Insurance Provider",
+      q62 %in% c("24","25", "42") ~ "Internet",
+      q62 %in% c("46","47", "48","51", "52", "53") ~ "No Response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q64
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q64a = case_when(
+      q64a == 1 ~ "Participated and liked it",
+      q64a == 2 ~ "Participated but didn't like it",
+      q64a == 3 ~ "Didn't participate",
+      q64a == 4 ~ "Never heard of this",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+data_raw_target$q64a <- factor(data_raw_target$q64a, levels = c("No response/Other", "Never heard of this","Didn't participate", "Participated but didn't like it", "Participated and liked it"), ordered = TRUE)
+
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q64b = case_when(
+      q64b == 1 ~ "Participated and liked it",
+      q64b == 2 ~ "Participated but didn't like it",
+      q64b == 3 ~ "Didn't participate",
+      q64b == 4 ~ "Never heard of this",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+data_raw_target$q64b <- factor(data_raw_target$q64b, levels = c("No response/Other", "Never heard of this","Didn't participate", "Participated but didn't like it", "Participated and liked it"), ordered = TRUE)
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q64c = case_when(
+      q64c == 1 ~ "Participated and liked it",
+      q64c == 2 ~ "Participated but didn't like it",
+      q64c == 3 ~ "Didn't participate",
+      q64c == 4 ~ "Never heard of this",
+      TRUE ~ "No response/Other"
+    )
+  )
+data_raw_target$q64c <- factor(data_raw_target$q64c, levels = c("No response/Other", "Never heard of this","Didn't participate", "Participated but didn't like it", "Participated and liked it"), ordered = TRUE)
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q64d = case_when(
+      q64d == 1 ~ "Participated and liked it",
+      q64d == 2 ~ "Participated but didn't like it",
+      q64d == 3 ~ "Didn't participate",
+      q64d == 4 ~ "Never heard of this",
+      TRUE ~ "No response/Other"
+    )
+  )
+data_raw_target$q64d <- factor(data_raw_target$q64d, levels = c("No response/Other", "Never heard of this","Didn't participate", "Participated but didn't like it", "Participated and liked it"), ordered = TRUE)
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q64e = case_when(
+      q64e == 1 ~ "Participated and liked it",
+      q64e == 2 ~ "Participated but didn't like it",
+      q64e == 3 ~ "Didn't participate",
+      q64e == 4 ~ "Never heard of this",
+      TRUE ~ "No response/Other"
+    )
+  )
+data_raw_target$q64e <- factor(data_raw_target$q64e, levels = c("No response/Other", "Never heard of this","Didn't participate", "Participated but didn't like it", "Participated and liked it"), ordered = TRUE)
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q64f = case_when(
+      q64f == 1 ~ "Participated and liked it",
+      q64f == 2 ~ "Participated but didn't like it",
+      q64f == 3 ~ "Didn't participate",
+      q64f == 4 ~ "Never heard of this",
+      TRUE ~ "No response/Other"
+    )
+  )
+data_raw_target$q64f <- factor(data_raw_target$q64f, levels = c("No response/Other", "Never heard of this","Didn't participate", "Participated but didn't like it", "Participated and liked it"), ordered = TRUE)
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q64g = case_when(
+      q64g == 1 ~ "Participated and liked it",
+      q64g == 2 ~ "Participated but didn't like it",
+      q64g == 3 ~ "Didn't participate",
+      q64g == 4 ~ "Never heard of this",
+      TRUE ~ "No response/Other"
+    )
+  )
+data_raw_target$q64g <- factor(data_raw_target$q64g, levels = c("No response/Other", "Never heard of this","Didn't participate", "Participated but didn't like it", "Participated and liked it"), ordered = TRUE)
+
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q64h = case_when(
+      q64h == 1 ~ "Participated and liked it",
+      q64h == 2 ~ "Participated but didn't like it",
+      q64h == 3 ~ "Didn't participate",
+      q64h == 4 ~ "Never heard of this",
+      TRUE ~ "No response/Other"
+    )
+  )
+data_raw_target$q64h <- factor(data_raw_target$q64h, levels = c("No response/Other", "Never heard of this","Didn't participate", "Participated but didn't like it", "Participated and liked it"), ordered = TRUE)
+
+#Q65
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q65 = case_when(
+      v_q651 == 1 ~ "Yes, members of my immediate family",
+      v_q652 == 2 ~ "Yes, members of my extended family",
+      v_q653 == 3  ~ "Yes, a friend/Other people",
+      v_q654 == 4 ~ "Yes, a friend/Other people",
+      v_q655 == 5 ~ "No One",
+      v_q656 == 6 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+```
+
+```{r}
+#Q73
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q73 = case_when(
+      q73 == 1 ~ "Yes",
+      q73 == 2 ~ "No",
+      q73 == 3 ~ "No response/Other",
+      q73 == 4 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q74
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q74 = case_when(
+      q74 == 1 ~ "Less than 5 years ago",
+      q74 == 2 ~ "5 to 10 years ago",
+      q74 == 3 ~ "More than 10 years ago",
+      q74 == 4 ~ "No response/Other",
+      q74 == 5 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q75
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q75 = case_when(
+      v_q751 == 1 ~ "English",
+      v_q752 == 2 ~ "French",
+      v_q753 == 3 ~ "Other",
+      v_q754 == 4 ~ "Other",
+      v_q755 == 5 ~ "Other",
+      v_q756 == 6 ~ "Other",
+      v_q757 == 7 ~ "Other",
+      v_q758 == 8 ~ "Other",
+      v_q759 == 9 ~ "Other",
+      v_q7510 == 10 ~ "Other",
+      v_q7511 == 11 ~ "Other",
+      v_q7512 == 12 ~ "Other",
+      v_q7513 == 13 ~ "Other",
+      v_q7514 == 14 ~ "Other",
+      v_q7515 == 15 ~ "Other",
+      v_q7516 == 16 ~ "Other",
+      v_q7517 == 17 ~ "Other",
+      v_q7518 == 18 ~ "Other",
+      v_q7519 == 19 ~ "Other",
+      v_q7520 == 20 ~ "Other",
+      v_q7521 == 21 ~ "No response/Other",
+      v_q7522 == 22 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q76
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q76 = case_when(
+      q76 == c(1,2) ~ "Under High school",
+      q76 == c(3,4) ~ "High school diploma",
+      q76 == c(5,6) ~ "College or technical school",
+      q76 == 7 ~ "University undergraduate",
+      q76 == 8 ~ "Above university undergraduate",
+      q76 == 9 ~ "No response/Other",
+      q76 == 10 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q77
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q77 = case_when(
+      q77 == 1 ~ "Yes",
+      q77 == 2 ~ "No",
+      q77 == 3 ~ "No response/Other",
+      q77 == 4 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q78
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q78 = case_when(
+      q78 == 1 ~ "On an acreage, ranch or farm",
+      q78 == 2 ~ "In a small town (less than 2,000 people)",
+      q78 == 3 ~ "In a large town (2,000 to 10,000 people)",
+      q78 == 4 ~ "In a small city (10,000 to 50,000 people)",
+      q78 == 5 ~ "In a large city (more than 50,000 people)",
+      q78 == 6 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q79
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q79 = case_when(
+      v_q791 == 1 ~ "Working full-time",
+      v_q792 == c(2,3,4,5) ~ "Working part-time",
+      v_q796 == c(6,8) ~ "Stay-at-home parent/Retired",
+      v_q797 == 7 ~ "Full-time student",
+      v_q799 == 9 ~ "Unemployed",
+      v_q7910 == 10 ~ "No response/Other",
+      v_q7911 == 11 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q80
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q80 = case_when(
+      q80 == 1 ~ "Less than 25,000",
+      q80 == 2 ~ "25,000 to less than 50,000",
+      q80 == 3 ~ "50,000 to less than 75,000",
+      q80 == 4 ~ "75,000 to less than 125,000",
+      q80 == 5 ~ "125,000 or more",
+      q80 == 6 ~ "No response/Otherr",
+      q80 == 7 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q81
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q81a = case_when(
+      q81a == 1 ~ "Every day",
+      q81a == 2 ~ "2-3 times a week",
+      q81a == 3 ~ "Once a week",
+      q81a == 4 ~ "Once every two weeks",
+      q81a == 5 ~ "Once a month or less",
+      q81a == 6 ~ "Never",
+      q81a == 7 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q81b = case_when(
+      q81b == 1 ~ "Every day",
+      q81b == 2 ~ "2-3 times a week",
+      q81b == 3 ~ "Once a week",
+      q81b == 4 ~ "Once every two weeks",
+      q81b == 5 ~ "Once a month or less",
+      q81b == 6 ~ "Never",
+      q81b == 7 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+
+#Q82
+data_raw_target <- data_raw_target %>%
+  mutate(
+    q82 = case_when(
+      v_q821 == 1 ~ "Written about my own opinions",
+      v_q822 == 2 ~ "Commented on what others have written",
+      v_q823 == 3 ~ "Shared links to articles or information",
+      v_q824 == 4 ~ "Read what others have posted",
+      v_q825 == 5 ~ "Clicked on health-related posts/videos",
+      v_q826 == 6 ~ "None of the above",
+      v_q827 == 7 ~ "No response/Other",
+      TRUE ~ "No response/Other"
+    )
+  )
+```
+
+
+```{r}
+data_target <- data_raw_target %>%
+  select(
+    id, q2, q3, q12, q13, q14, q15,q20, q21, q22a, q22b, q22c, q22d, q24c, q31f, q32,
+    PHY_1_Swelling, PHY_2_Tiredness, PHY_3_Chronic_pain, PHY_4_Gastrointestinal, PHY_5_Memory, PHY_6_Sexual,q38,q42,
+    EMO_1_Depression, EMO_2_Anxiety, EMO_3_Relationship_Family, EMO_4_Relationship_Friend, EMO_5_Appearance, EMO_6_Sexual, q48, q52,
+    PRA_1_Returning, q58, q62, q64a, q64b, q64c, q64d, q64e, q64f, q64g, q64h, q65, 
+    q73, q74, q75, q76, q77, q78, q79, q80, q81a, q81b, q82
+  )
+```
+
+```{r}
+saveRDS(data_target, file = "Wellspring_Cleaned.Rdata")
+```
+
+```{r}
+file_test = readRDS("C:/Users/maxlo/Downloads/Wellspring_Cleaned.Rdata")
+```
