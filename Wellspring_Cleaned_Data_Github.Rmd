@@ -150,9 +150,7 @@ data_raw_target <- data_raw %>%
 ```{r}
 library(dplyr)
 #Q2
-# Keep Sex with only Male and Female
 data_raw_target <- data_raw_target %>%
-  filter(q2 %in% c(1, 2)) %>%
   mutate(
     q2 = case_when(
       q2 == 1 ~ "Male",
@@ -162,9 +160,7 @@ data_raw_target <- data_raw_target %>%
   )
 
 #Q3
-# Remove invalid age
 data_raw_target <- data_raw_target %>%
-  filter(!q3 %in% c(11, 12)) %>%
   mutate(
     q3 = case_when(
       q3 == 1 ~ "Under 18",
