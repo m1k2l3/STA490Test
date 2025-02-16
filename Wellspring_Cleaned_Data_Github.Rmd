@@ -30,7 +30,7 @@ library(stringr)
 # Import dataset
 library(haven)
 # Please fill in your own address
-data_raw <- read_sas("C:/Users/Junchen/Desktop/EDA/Assignment/tr_quan_national_deid.sas7bdat",NULL)
+data_raw <- read_sas("tr_quan_national_deid.sas7bdat",NULL)
 ```
 
 ```{r}
@@ -281,8 +281,8 @@ data_raw_target <- data_raw_target %>%
   mutate(
     q15 = case_when(
       q15 == 1 ~ "Metastatic",
-      q15 == 2 ~ "No, wasn't diagnosed as metastatic but it spread afterwards",
-      q15 == 3 ~ "No, wasn't diagnosed as metastatic and it did not spread",
+      q15 == 2 ~ "Not metastatic but spread afterwards",
+      q15 == 3 ~ "Not metastatic and not spread",
       q15 == 4 ~ "Unsure",
       q15 == 5 ~ "No response/Other",
       TRUE ~ "No response/Other" 
@@ -364,9 +364,10 @@ data_raw_target <- data_raw_target %>%
 data_raw_target$q22a <- factor(data_raw_target$q22a, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
 
 data_raw_target$q22b <- factor(data_raw_target$q22b, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
-data_raw_target$q22c <- factor(data_raw_target$q22c, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
-data_raw_target$q22d <- factor(data_raw_target$q22d, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
 
+data_raw_target$q22c <- factor(data_raw_target$q22c, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
+
+data_raw_target$q22d <- factor(data_raw_target$q22d, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
 
 #Q24
 data_raw_target <- data_raw_target %>%
@@ -382,6 +383,8 @@ data_raw_target <- data_raw_target %>%
     )
   )
 
+data_raw_target$q24c <- factor(data_raw_target$q24c, levels = c("No response/Other", "Very poor","Poor", "Fair", "Good", "Very good"), ordered = TRUE)
+
 #Q31
 data_raw_target <- data_raw_target %>%
   mutate(
@@ -395,6 +398,8 @@ data_raw_target <- data_raw_target %>%
       TRUE ~ "No response/Other"
     )
   )
+
+data_raw_target$q31f <- factor(data_raw_target$q31f, levels = c("No response/Other", "Strongly disagree","Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Strongly agree"), ordered = TRUE)
 
 #Q32
 data_raw_target <- data_raw_target %>%
@@ -410,6 +415,7 @@ data_raw_target <- data_raw_target %>%
       TRUE ~ "No response/Other"
     )
   )
+
 ```
 
 ```{r}
@@ -440,9 +446,6 @@ data_raw_target <- data_raw_target %>%
       sep = ";"
     )
   )
-
-
-
 
 data_raw_target <- data_raw_target %>%
   mutate(PHY_2_Tiredness = case_when(
@@ -643,14 +646,12 @@ data_raw_target <- data_raw_target %>%
 data_raw_target <- data_raw_target %>%
   mutate(
     q38 = case_when(
-      q38 %in% c(1, 2, 3, 4, 5, 6, 7, 8) ~ "Access/Knowledge Barriers",           
-      q38 %in% c(9, 10, 11, 12, 35, 36, 37, 41, 42) ~ "System/Service Issues",             
-      q38 %in% c(13, 14, 15, 16, 17, 18, 19) ~ "Not a concern", 
-      q38 %in% c(21, 22, 23) ~ "Healthcare Provider Issues", 
-      q38 %in% c(24, 25, 26, 27, 28, 29, 30) ~ "Belief or Personal Preferences", 
-      q38 %in% c(31, 32, 33, 34, 46, 47, 48, 49, 50, 51) ~ "Had support from others", 
-      q38 %in% c(38, 39, 40) ~ "Treatment Ineffectiveness/Concerns", 
-      q38 %in% c(43, 44, 45, 52, 53, 54, 55, 56, 57) ~ "Other/Unspecified", 
+      q38 %in% c(3, 4, 5, 6, 23, 37, 42, 58) ~ "Access/Knowledge barriers",           
+      q38 %in% c(9, 10, 11, 12, 21, 35, 36, 53) ~ "Thinks no help",             
+      q38 %in% c(13, 14, 15, 16, 17, 57) ~ "Not a concern", 
+      q38 %in% c(1, 2, 7, 8, 18, 19, 24, 25, 26, 27, 28, 29, 30, 55) ~ "Belief or personal preferences", 
+      q38 %in% c(31, 32, 44, 46, 47, 48, 49, 50, 51) ~ "Had support from others", 
+      q38 %in% c(22, 33, 34, 38, 39, 40, 41, 43, 45, 52, 54, 56) ~ "Self-related/Unspecified", 
       TRUE ~ "No response/Other"
     )
   )
@@ -737,7 +738,6 @@ data_raw_target <- data_raw_target %>%
 data_raw_target <- data_raw_target %>%
   mutate(
     q42 = case_when(
-      # Group 1: Healthcare Professionals
       q42 %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 28, 29, 30, 31, 32, 33, 39, 40) ~ "Healthcare Professionals",
       q42 %in% c(11, 12, 13, 14, 41, 45) ~ "Mental Health/Wellness",
       q42 %in% c(15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 34, 35, 36, 37, 38) ~ "Alternative/Complementary Support",
@@ -978,14 +978,12 @@ data_raw_target <- data_raw_target %>%
 data_raw_target <- data_raw_target %>%
   mutate(
     q48 = case_when(
-      q48 %in% c(3, 4, 5, 6,9 ,10, 11, 12, 39, 40, 41) ~ "Lack of Awareness/Resources",
-      q48 %in% c(7, 8, 33, 37, 53, 54) ~ "Emotional Barriers",
-      q48 %in% c(15, 16, 17, 18, 19, 20, 21, 22, 44, 45, 46) ~ "Had Support",
-      q48 %in% c(13, 32, 42, 43, 51) ~ "Practical Issues",
-      q48 %in% c(1, 2, 23, 24, 25, 28, 29, 30, 31, 47, 48, 49, 50) ~ "Attitude/Perception",
-      q48 %in% c(26, 27, 35, 38) ~ "Health System-Related",
-      q48 %in% c(34, 36) ~ "Faith-Based",
-      q48 %in% c(52, 55, 56, 57, 58, 59, 60, 61) ~ "No response/Other",
+      q48 %in% c(3, 4, 5, 6, 9, 10, 32, 37, 38, 40, 41, 42, 51, 56) ~ "Access/Knowledge barriers",
+      q48 %in% c(13, 26, 27, 52) ~ "Thinks no help",
+      q48 %in% c(23, 57, 58, 59, 60, 55) ~ "Not a concern",
+      q48 %in% c(1, 2, 7, 8, 11, 12, 24, 25, 30, 31, 34, 47, 49, 50, 53) ~ "Belief or personal preferences",
+      q48 %in% c(15, 16, 17, 18, 19, 21, 22, 35, 44, 45, 46 ) ~ "Had support from others", 
+      q48 %in% c(28, 29, 33, 36, 39, 43, 48, 54) ~ "Self-related/Unspecified", 
       TRUE ~ "No response/Other"
     )
   )
@@ -1062,7 +1060,6 @@ data_raw_target <- data_raw_target %>%
   )
 ```
 
-PENNY
 ```{r}
 #Practical Challenge
 #Q545556
@@ -1151,13 +1148,12 @@ data_raw_target <- data_raw_target %>%
 data_raw_target <- data_raw_target %>%
   mutate(
     q58 = case_when(
-      q58 %in% c(1, 2, 3, 4, 5, 6, 7, 8, 47) ~ "Embarrassment or Lack of Awareness",
-      q58 %in% c(9, 10, 28, 35) ~ "Lack of Resources or Access",
-      q58 %in% c(14, 15, 16, 17, 18, 22, 39, 40, 41) ~ "Support from Family or Community",
-      q58 %in% c(11, 12, 19, 20, 21, 23, 43) ~ "Assumed Normal to Handle",
-      q58 %in% c(24, 25, 27, 29, 30, 31, 32, 44) ~ "Financial or Insurance Issues",
-      q58 %in% c(26, 33, 34, 36, 37, 38, 42, 45, 46) ~ "Lost Hope or Didn't Need Help",
-      q58 %in% c(48, 49, 50, 51, 52) ~"No response/Other", 
+      q58 %in% c(3, 4, 5, 6, 9, 10, 24, 25, 27, 28, 29, 30, 31, 32, 44, 47) ~  "Access/Knowledge barriers",
+      q58 %in% c(26, 27, 29, 34, 35) ~ "Thinks no help",
+      q58 %in% c(19, 46, 48, 49, 50, 51) ~ "Not a concern",
+      q58 %in% c(1, 2, 7, 8, 11, 12, 20, 21, 23, 36, 37, 42, 43) ~ "Belief or personal preferences",
+      q58 %in% c(14, 15, 16, 17, 22, 39, 40, 41) ~ "Had support from others",
+      q58 %in% c(33, 38, 45, 46, 47) ~  "Self-related/Unspecified",
       TRUE ~ "No response/Other"
     )
   )
@@ -1534,9 +1530,11 @@ data_target <- data_raw_target %>%
 ```
 
 ```{r}
+# 
 saveRDS(data_target, file = "Wellspring_Cleaned.Rdata")
 ```
 
 ```{r}
-file_test = readRDS("C:/Users/maxlo/Downloads/Wellspring_Cleaned.Rdata")
+# Please check the Local file
+#file_test = readRDS("C:/Users/maxlo/Downloads/Wellspring_Cleaned.Rdata")
 ```
