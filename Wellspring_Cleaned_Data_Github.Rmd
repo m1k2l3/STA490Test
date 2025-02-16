@@ -29,7 +29,8 @@ library(stringr)
 ```{r}
 # Import dataset
 library(haven)
-data_raw <- read_sas("C:/Users/maxlo/Downloads/Assignment(2)/Assignment/tr_quan_national_deid.sas7bdat",NULL)
+# Please fill in your own address
+data_raw <- read_sas("C:/Users/Junchen/Desktop/EDA/Assignment/tr_quan_national_deid.sas7bdat",NULL)
 ```
 
 ```{r}
@@ -148,20 +149,22 @@ data_raw_target <- data_raw %>%
 
 ```{r}
 library(dplyr)
-# Q2
+#Q2
 # Keep Sex with only Male and Female
 data_raw_target <- data_raw_target %>%
+  filter(q2 %in% c(1, 2)) %>%
   mutate(
     q2 = case_when(
       q2 == 1 ~ "Male",
       q2 == 2 ~ "Female",
-      q2 %in% c(3, 4, 5) ~ "No response/Other",
       TRUE ~ "No response/Other" 
     )
   )
 
 #Q3
+# Remove invalid age
 data_raw_target <- data_raw_target %>%
+  filter(!q3 %in% c(11, 12)) %>%
   mutate(
     q3 = case_when(
       q3 == 1 ~ "Under 18",
