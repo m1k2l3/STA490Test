@@ -32,14 +32,6 @@ library(haven)
 data_raw <- read_sas("C:/Users/maxlo/Downloads/Assignment(2)/Assignment/tr_quan_national_deid.sas7bdat",NULL)
 ```
 
-
-```{r}
-# Set up table for raw data type
-raw_data_types <- sapply(data_raw, class)
-raw_data_type_counts <- table(raw_data_types)
-raw_data_type_counts_df <- as.data.frame(raw_data_type_counts)
-```
- 
 ```{r}
 # Select only target questions
 data_raw_target <- data_raw %>%
