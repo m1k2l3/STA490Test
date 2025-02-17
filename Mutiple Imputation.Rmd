@@ -1,30 +1,100 @@
 ---
-title: "Untitled"
-author: "Junchen Wu 1007629675"
+title: "Mutiple Imputation"
+author: "Max Chen"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# Only showing the output instead of raw code
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE)
 ```
 
-## R Markdown
+```{r, include=FALSE}
+if (!requireNamespace("dplyr", quietly = TRUE)) {
+  install.packages("dplyr", repos = "http://cran.us.r-project.org")
+}
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+if (!requireNamespace("magrittr", quietly = TRUE)) {
+  install.packages("magrittr", repos = "http://cran.us.r-project.org")
+}
 
-```{r cars}
-summary(cars)
+if (!requireNamespace("naniar", quietly = TRUE)) {
+  install.packages("naniar", repos = "http://cran.us.r-project.org")
+}
+
+if (!requireNamespace("finalfit", quietly = TRUE)) {
+  install.packages("finalfit", repos = "http://cran.us.r-project.org")
+}
+
+if (!requireNamespace("GGally", quietly = TRUE)) {
+  install.packages("GGally", repos = "http://cran.us.r-project.org")
+}
+
+if (!requireNamespace("rms", quietly = TRUE)) {
+  install.packages("rms", repos = "http://cran.us.r-project.org")
+}
+
+if (!requireNamespace("kableExtra", quietly = TRUE)) {
+  install.packages("kableExtra", repos = "http://cran.us.r-project.org")
+}
+
+if (!requireNamespace("mice", quietly = TRUE)) {
+  install.packages("mice", repos = "http://cran.us.r-project.org")
+}
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+data = readRDS("Wellspring_Cleaned.Rdata")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+# We want to look into the following missing questions: 
+# q2 - Sex, q3 - Age, q73 - Born in Canada, q76 - Level of Education, q78 - Home Location, q79 - Employment Stasis, q80 - Income Level  
+
+transform_no_response <- function(df, vars, replacement = NA) {
+  # Ensure the specified columns exist in the dataframe
+  vars <- intersect(vars, colnames(df))
+  
+  # Apply transformation
+  df[vars] <- lapply(df[vars], function(x) {
+    ifelse(x == "No response/Other", replacement, x)
+  })
+  
+  return(df)
+}
+
+data <- transform_no_response(data, vars = c("q2", "q3", "q73", "q76", "q78", "q79", "q80"), replacement = NA)
+```
+
+```{r}
+# Use Multiple Imputation by Chained Equations (MICE) for q76
+data_imputed <- data %>%
+  rename(Sex = q2, Age = q3, Birthplace = q73, Education = q76, Location = q78, Employment = q79, Income = q80)
+
+categorical_vars <- c("Sex", "Age", "Birthplace", "Education", "Location", "Employment", "Income")
+
+data_imputed[categorical_vars] <- lapply(data_imputed[categorical_vars], as.factor)
+
+# Set seed for reproducibility
+seed = 1234
+set.seed(seed)
+
+# Perform multiple imputation
+mice_imputed <- mice(data_imputed, method = "polyreg", m = 100, maxit = 10, seed = seed)
+
+```
+
+```{r}
+# Get the complete dataset with imputed values
+imputed_data_1 <- complete(mice_imputed, action = 1)
+```
+
+```{r}
+saveRDS(mice_imputed, file = "Wellspring_mice_imputed.Rdata")
+saveRDS(imputed_data_1, file = "Wellspring_imputed_data_1.Rdata")
+```
