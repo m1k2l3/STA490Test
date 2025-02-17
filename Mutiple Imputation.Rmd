@@ -86,7 +86,6 @@ set.seed(seed)
 
 # Perform multiple imputation
 mice_imputed <- mice(data_imputed, method = "polyreg", m = 100, maxit = 10, seed = seed)
-
 ```
 
 ```{r}
