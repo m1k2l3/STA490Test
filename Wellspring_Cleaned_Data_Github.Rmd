@@ -1433,11 +1433,11 @@ data_raw_target <- data_raw_target %>%
 data_raw_target <- data_raw_target %>%
   mutate(
     q78 = case_when(
-      q78 == 1 ~ "On an acreage, ranch or farm",
-      q78 == 2 ~ "In a small town (less than 2,000 people)",
-      q78 == 3 ~ "In a large town (2,000 to 10,000 people)",
-      q78 == 4 ~ "In a small city (10,000 to 50,000 people)",
-      q78 == 5 ~ "In a large city (more than 50,000 people)",
+      q78 == 1 ~ "Acreage, ranch or farm",
+      q78 == 2 ~ "Small town",
+      q78 == 3 ~ "Large town",
+      q78 == 4 ~ "Small city",
+      q78 == 5 ~ "Large city",
       q78 == 6 ~ "No response/Other",
       TRUE ~ "No response/Other"
     )
@@ -1462,12 +1462,12 @@ data_raw_target <- data_raw_target %>%
 data_raw_target <- data_raw_target %>%
   mutate(
     q80 = case_when(
-      q80 == 1 ~ "Less than 25,000",
-      q80 == 2 ~ "25,000 to less than 50,000",
-      q80 == 3 ~ "50,000 to less than 75,000",
-      q80 == 4 ~ "75,000 to less than 125,000",
+      q80 == 1 ~ "less than 25,000",
+      q80 == 2 ~ "25,000 to 50,000",
+      q80 == 3 ~ "50,000 to 75,000",
+      q80 == 4 ~ "75,000 to 125,000",
       q80 == 5 ~ "125,000 or more",
-      q80 == 6 ~ "No response/Otherr",
+      q80 == 6 ~ "No response/Other",
       q80 == 7 ~ "No response/Other",
       TRUE ~ "No response/Other"
     )
