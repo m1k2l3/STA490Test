@@ -1065,7 +1065,7 @@ data_raw_target <- data_raw_target %>%
 #Q545556
 data_raw_target <- data_raw_target %>%
   mutate(PRA_1_Returning = case_when(
-      q54a == 1 ~ "Not a Concern",
+      q54a == 1 ~ "Not a concern",
       q54a == 2 ~ "Small Concern",
       q54a == 3 ~ "Moderate Concern",
       q54a == 4 ~ "Big Concern",
